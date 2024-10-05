@@ -1,0 +1,189 @@
+Project 2: Multi-Container Application with Docker Compose
+
+In this project, we’ll build a multi-container application using Docker Compose. The application will consist of:
+
+A Python Flask web application.
+A PostgreSQL database for the backend.
+Docker Compose will help us orchestrate these containers, link them, and manage their lifecycle easily.
+
+-------------------------------------------------
+
+Steps to Build the Solution
+1. Create the Web Application
+Let’s start by creating a simple Flask application that connects to a PostgreSQL database.
+
+app.py (Flask App)
+python
+Copy code
+from flask import Flask, request, jsonify
+import psycopg2
+
+app = Flask(__name__)
+
+def get_db_connection():
+    conn = psycopg2.connect(
+        host='db',  # The service name of PostgreSQL in Docker Compose
+        database='testdb',
+        user='postgres',
+        password='password'
+    )
+    return conn
+
+@app.route('/')
+def hello():
+    return 'Hello, Docker Compose!'
+
+@app.route('/users', methods=['GET'])
+def get_users():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users;')
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(users)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+This app has two routes:
+
+/: Returns a "Hello, Docker Compose!" message.
+/users: Fetches all users from the PostgreSQL database.
+
+2. Create requirements.txt
+This file contains the Python packages required for the Flask app.
+
+requirements.txt
+makefile
+Copy code
+Flask==2.1.1
+psycopg2-binary==2.9.3
+3. Create the Dockerfile for Flask App
+To containerize the Flask app, we need a Dockerfile.
+
+Dockerfile
+Dockerfile
+Copy code
+# Use an official Python runtime as the base image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install the required Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose port 5000 for the Flask app
+EXPOSE 5000
+
+# Run the Flask app
+CMD ["python", "app.py"]
+4. Create a docker-compose.yml File
+This file defines the services (Flask app and PostgreSQL database) and how they will interact.
+
+docker-compose.yml
+yaml
+Copy code
+version: '3'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=testdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+Explanation of docker-compose.yml:
+web:
+
+Builds the Flask app from the Dockerfile.
+Maps port 5000 of the container to port 5000 on the host.
+Depends on the db service to start first.
+Sets environment variables for connecting to the PostgreSQL database.
+db:
+
+Uses the official PostgreSQL image (postgres:13).
+Defines environment variables like POSTGRES_DB, POSTGRES_USER, and POSTGRES_PASSWORD to configure the database.
+Mounts a Docker volume (pgdata) to persist data.
+volumes:
+
+Defines a volume (pgdata) to store the PostgreSQL data persistently.
+5. Initialize the Database
+To create the users table in PostgreSQL, you need a script that runs on container startup.
+
+init.sql (SQL Initialization Script)
+sql
+Copy code
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100)
+);
+
+INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
+Update the docker-compose.yml file to execute the script on container startup:
+
+yaml
+Copy code
+db:
+  image: postgres:13
+  environment:
+    POSTGRES_DB: testdb
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
+  volumes:
+    - pgdata:/var/lib/postgresql/data
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+This ensures that the init.sql script is run when the PostgreSQL container starts.
+
+6. Run the Docker Compose Application
+Now that everything is set up, you can use Docker Compose to bring up the services:
+
+bash
+Copy code
+docker-compose up --build
+--build: This flag ensures the Flask app is rebuilt if the Dockerfile has changed.
+Docker Compose will start both the web (Flask) and db (PostgreSQL) containers and link them together.
+7. Test the Application
+Open your browser and navigate to http://localhost:5000 to see the message: "Hello, Docker Compose!"
+Go to http://localhost:5000/users to fetch the users from the database, which should display:
+json
+Copy code
+[
+  [1, "John Doe", "john@example.com"]
+]
+8. Stopping and Removing the Containers
+To stop the application:
+
+bash
+Copy code
+docker-compose down
+This will stop and remove the containers, but the data stored in the PostgreSQL volume (pgdata) will persist.
+
+Project Summary
+Technologies: Flask (Python), PostgreSQL, Docker Compose.
+Key Docker Concepts:
+Using Docker Compose to define and run multi-container applications.
+Linking services (web and database) and managing dependencies.
+Persisting data using Docker volumes.
+This project demonstrates how to manage multiple containers with Docker Compose, a fundamental skill when working with microservices and containerized environments.

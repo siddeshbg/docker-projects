@@ -187,3 +187,22 @@ Using Docker Compose to define and run multi-container applications.
 Linking services (web and database) and managing dependencies.
 Persisting data using Docker volumes.
 This project demonstrates how to manage multiple containers with Docker Compose, a fundamental skill when working with microservices and containerized environments.
+
+------------------------------------
+
+In case if you add new users to DB through init.sql, you need delete volumes and recreate with below Steps
+2. Ensure the Volume is Mounted Before the Database is Created
+If the database already exists (because the container or volume was previously created), the init.sql script will not run, as initialization scripts only run when the database is first created. To fix this:
+
+Remove the volume: This ensures the database is recreated, and the initialization script is executed.
+
+bash
+Copy code
+docker-compose down -v
+The -v flag removes all volumes associated with the service.
+
+Re-run Docker Compose:
+
+bash
+Copy code
+docker-compose up --build

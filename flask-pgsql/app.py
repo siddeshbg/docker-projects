@@ -13,7 +13,7 @@ def get_db_connection():
     return conn
 @app.route('/')
 def hello():
-    return 'Hello, Docker Compose!'
+    return 'Hello, Docker Compose!' + "\nCreated on Oct/05/2024"
 
 @app.route('/users', methods=['GET'])
 def get_users():

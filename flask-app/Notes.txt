@@ -1,0 +1,94 @@
+Project 1: Dockerizing a Simple Web Application. Below is a solution for containerizing a basic Python Flask web application using Docker.
+
+1. Create the Web Application
+We’ll create a simple Flask web application that will run inside a Docker container.
+
+app.py (Python Flask App)
+python
+Copy code
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return "Hello, Docker!"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+This simple app returns "Hello, Docker!" when accessed in a browser.
+
+2. Write the Dockerfile
+A Dockerfile is needed to build the Docker image for this Flask app.
+
+Dockerfile
+Dockerfile
+Copy code
+# Use an official Python runtime as the base image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
+
+# Define environment variable
+ENV FLASK_APP=app.py
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
+3. Create requirements.txt
+You need a requirements.txt file to specify the dependencies for your Python app.
+
+requirements.txt
+makefile
+Copy code
+Flask==2.1.1
+4. Build the Docker Image
+Once you have the app.py, Dockerfile, and requirements.txt, you can build the Docker image.
+
+Run the following command in the project’s directory (where the Dockerfile is located):
+
+bash
+Copy code
+docker build -t flask-app .
+-t flask-app: Tags the image with the name flask-app.
+.: Refers to the current directory where the Dockerfile is located.
+5. Run the Docker Container
+Now that the image is built, you can run the container with the following command:
+
+bash
+Copy code
+docker run -d -p 5000:5000 flask-app
+-d: Runs the container in detached mode (in the background).
+-p 5000:5000: Maps port 5000 on your host to port 5000 inside the container.
+6. Test the Web Application
+After running the container, open your browser and navigate to http://localhost:5000. You should see:
+
+Copy code
+Hello, Docker!
+7. Stopping and Removing the Container
+To stop the container:
+
+bash
+Copy code
+docker ps  # List the running containers and find the container ID
+docker stop <container_id>
+To remove the container:
+
+bash
+Copy code
+docker rm <container_id>
+8. Cleaning Up
+If you want to remove the image you built, you can do:
+
+bash
+Copy code
+docker rmi flask-app
